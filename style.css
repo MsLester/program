@@ -1,0 +1,91 @@
+﻿/* 全局设置：让盒模型更好用 */
+* {
+  box-sizing: border-box;
+}
+
+/* 页面基础样式 */
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+/* 应用容器 */
+.app {
+  max-width: 520px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* 输入行与筛选行的布局 */
+.input-row,
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+/* 输入框样式 */
+#todo-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* 按钮样式（保持简单） */
+button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+/* 日期输入框 */
+#filter-date {
+  padding: 6px 8px;
+}
+
+/* 任务列表区域 */
+#todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 单条任务样式 */
+.todo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* 任务文本区域 */
+.todo-text {
+  flex: 1;
+  margin-right: 8px;
+  word-break: break-word;
+}
+
+/* 已完成样式 */
+.completed {
+  text-decoration: line-through;
+  color: #888;
+}
+
+/* 日期显示 */
+.todo-date {
+  font-size: 12px;
+  color: #888;
+  margin-right: 8px;
+}
+
+/* 右侧按钮组 */
+.todo-actions button {
+  margin-left: 6px;
+}

@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>简单 Todo 应用</title>
+  <!-- 引入样式文件 -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 页面标题 -->
+    <h1>我的 Todo 清单</h1>
+
+    <!-- 输入区域：输入任务 + 添加按钮 -->
+    <div class="input-row">
+      <input id="todo-input" type="text" placeholder="请输入任务内容" />
+      <button id="add-btn">添加</button>
+    </div>
+
+    <!-- 日期查找区域：选择日期 + 查找按钮 -->
+    <div class="filter-row">
+      <label for="filter-date">按日期查找：</label>
+      <input id="filter-date" type="date" />
+      <button id="filter-btn">查找</button>
+      <button id="clear-btn">清除</button>
+    </div>
+
+    <!-- 任务列表区域 -->
+    <ul id="todo-list"></ul>
+  </div>
+
+  <!-- 引入脚本文件 -->
+  <script src="script.js"></script>
+</body>
+</html>
