@@ -3,34 +3,649 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>cxj jsb - Todo 应用</title>
-  <!-- 引入样式文件 -->
-  <link rel="stylesheet" href="style.css" />
+  <meta name="description" content="带注册登录和数据库存储的简易 Todo 应用" />
+  <title>陈曦杰记事本 - Todo 应用</title>
+
+  <!-- 内联样式（原 style.css） -->
+  <style>
+    /* 全局设置：让盒模型更好用 */
+    * {
+      box-sizing: border-box;
+    }
+
+    /* 页面基础样式 */
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+
+    /* 应用容器 */
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    /* 标题行：标题 + 退出按钮 */
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    /* 登录状态文字 */
+    .auth-status {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    /* 登录区域整体 */
+    .auth-section {
+      border: 1px solid #eee;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    /* 登录区域一行 */
+    .auth-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* 登录提示信息 */
+    .auth-message {
+      font-size: 12px;
+      color: #c00;
+      min-height: 18px; /* 留出一行空间，避免跳动 */
+    }
+
+    /* 输入行与筛选行的布局 */
+    .input-row,
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    /* 输入框样式 */
+    #todo-input,
+    #username,
+    #password {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* 按钮样式（保持简单） */
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    /* 日期输入框 */
+    #filter-date {
+      padding: 6px 8px;
+    }
+
+    /* 任务列表区域 */
+    #todo-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 单条任务样式 */
+    .todo-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* 任务文本区域 */
+    .todo-text {
+      flex: 1;
+      margin-right: 8px;
+      word-break: break-word;
+    }
+
+    /* 已完成样式 */
+    .completed {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    /* 日期显示 */
+    .todo-date {
+      font-size: 12px;
+      color: #888;
+      margin-right: 8px;
+    }
+
+    /* 右侧按钮组 */
+    .todo-actions button {
+      margin-left: 6px;
+    }
+
+    /* 通用隐藏类 */
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="app">
-    <!-- 页面标题 -->
-    <h1>cxj jsb</h1>
-
-    <!-- 输入区域：输入任务 + 添加按钮 -->
-    <div class="input-row">
-      <input id="todo-input" type="text" placeholder="请输入任务内容" />
-      <button id="add-btn">添加</button>
+  <main class="app">
+    <!-- 页面标题 + 退出登录按钮 -->
+    <div class="header-row">
+      <h1>陈曦杰记事本</h1>
+      <button id="logout-btn" class="hidden">退出登录</button>
     </div>
 
-    <!-- 日期查找区域：选择日期 + 查找按钮 -->
-    <div class="filter-row">
-      <label for="filter-date">按日期查找：</label>
-      <input id="filter-date" type="date" />
-      <button id="filter-btn">查找</button>
-      <button id="clear-btn">清除</button>
+    <!-- 登录状态文字 -->
+    <div id="auth-status" class="auth-status">未登录</div>
+
+    <!-- 登录 / 注册区域 -->
+    <div id="auth-section" class="auth-section">
+      <h2>登录 / 注册</h2>
+
+      <form id="auth-form">
+        <!-- 输入用户名和密码 -->
+        <div class="auth-row">
+          <input id="username" type="text" placeholder="用户名" autocomplete="username" />
+          <input id="password" type="password" placeholder="密码" autocomplete="current-password" />
+        </div>
+
+        <!-- 注册 / 登录按钮 -->
+        <div class="auth-row">
+          <button id="register-btn" type="button">注册</button>
+          <button id="login-btn" type="submit">登录</button>
+        </div>
+      </form>
+
+      <!-- 提示信息区域 -->
+      <div id="auth-message" class="auth-message"></div>
     </div>
 
-    <!-- 任务列表区域 -->
-    <ul id="todo-list"></ul>
-  </div>
+    <!-- Todo 区域（未登录时隐藏） -->
+    <div id="todo-section" class="hidden">
+      <!-- 输入区域：输入任务 + 添加按钮 -->
+      <div class="input-row">
+        <input id="todo-input" type="text" placeholder="请输入任务内容" />
+        <button id="add-btn">添加</button>
+      </div>
 
-  <!-- 引入脚本文件 -->
-  <script src="script.js"></script>
+      <!-- 日期查找区域：选择日期 + 查找按钮 -->
+      <div class="filter-row">
+        <label for="filter-date">按日期查找：</label>
+        <input id="filter-date" type="date" />
+        <button id="filter-btn">查找</button>
+        <button id="clear-btn">清除</button>
+      </div>
+
+      <!-- 任务列表区域 -->
+      <ul id="todo-list"></ul>
+    </div>
+  </main>
+
+  <!-- 内联脚本（原 script.js） -->
+  <script>
+    // ============================
+    // 1. 获取页面上的元素
+    // ============================
+    // Todo 相关元素
+    const input = document.getElementById('todo-input'); // 输入框
+    const addBtn = document.getElementById('add-btn');   // 添加按钮
+    const list = document.getElementById('todo-list');   // 列表容器
+    const todoSection = document.getElementById('todo-section'); // Todo 区域
+
+    const filterDate = document.getElementById('filter-date'); // 日期输入框
+    const filterBtn = document.getElementById('filter-btn');   // 查找按钮
+    const clearBtn = document.getElementById('clear-btn');     // 清除按钮
+
+    // 登录 / 注册相关元素
+    const authSection = document.getElementById('auth-section');
+    const authForm = document.getElementById('auth-form');
+    const authStatus = document.getElementById('auth-status');
+    const authMessage = document.getElementById('auth-message');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const registerBtn = document.getElementById('register-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // ============================
+    // 2. 定义数据结构（任务数组）
+    // ============================
+    // 任务从后端读取，保存在前端内存里
+    let todos = [];
+
+    // 当前登录用户（未登录为 null）
+    let currentUser = null;
+
+    // ============================
+    // 3. 工具函数：获取本地日期字符串
+    // ============================
+    function getTodayString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`; // 例如：2026-03-12
+    }
+
+    // ============================
+    // 4. 工具函数：显示提示信息
+    // ============================
+    function showAuthMessage(text, isError) {
+      authMessage.textContent = text;
+      authMessage.style.color = isError ? '#c00' : '#090';
+    }
+
+    // 统一处理后端响应，避免 JSON 解析失败后被误判为“网络错误”
+    async function readApiResponse(res) {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          return await res.json();
+        } catch (err) {
+          return {};
+        }
+      }
+      try {
+        const text = await res.text();
+        return { message: text };
+      } catch (err) {
+        return {};
+      }
+    }
+
+    // ============================
+    // 5. 工具函数：切换登录界面
+    // ============================
+    function setAuthUI(username) {
+      if (username) {
+        // 已登录
+        currentUser = username;
+        authStatus.textContent = `已登录：${username}`;
+        authSection.classList.add('hidden');
+        todoSection.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden');
+        showAuthMessage('', false);
+
+        // 登录后清空输入框
+        usernameInput.value = '';
+        passwordInput.value = '';
+
+        // 登录后拉取任务
+        loadTodos();
+      } else {
+        // 未登录
+        currentUser = null;
+        authStatus.textContent = '未登录';
+        authSection.classList.remove('hidden');
+        todoSection.classList.add('hidden');
+        logoutBtn.classList.add('hidden');
+        showAuthMessage('', false);
+
+        // 清空前端任务
+        todos = [];
+        render(todos);
+      }
+    }
+
+    // ============================
+    // 6. 与后端交互：注册
+    // ============================
+    async function registerUser() {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        showAuthMessage('用户名和密码不能为空', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await readApiResponse(res);
+
+        if (!res.ok) {
+          showAuthMessage(data.message || '注册失败', true);
+          return;
+        }
+
+        showAuthMessage('注册成功，请登录', false);
+      } catch (err) {
+        showAuthMessage('网络错误，无法注册', true);
+      }
+    }
+
+    // ============================
+    // 7. 与后端交互：登录
+    // ============================
+    async function loginUser() {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        showAuthMessage('用户名和密码不能为空', true);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await readApiResponse(res);
+
+        if (!res.ok) {
+          showAuthMessage(data.message || '登录失败', true);
+          return;
+        }
+
+        setAuthUI(data.username);
+      } catch (err) {
+        showAuthMessage('网络错误，无法登录', true);
+      }
+    }
+
+    // ============================
+    // 8. 与后端交互：退出登录
+    // ============================
+    async function logoutUser() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+      } catch (err) {
+        // 即使网络出错，也强制退出本地状态
+      }
+      setAuthUI(null);
+    }
+
+    // ============================
+    // 9. 与后端交互：检查是否已登录
+    // ============================
+    async function checkLogin() {
+      try {
+        const res = await fetch('/api/me');
+        const data = await readApiResponse(res);
+
+        if (data.loggedIn) {
+          setAuthUI(data.username);
+        } else {
+          setAuthUI(null);
+        }
+      } catch (err) {
+        setAuthUI(null);
+      }
+    }
+
+    // ============================
+    // 10. 与后端交互：获取任务
+    // ============================
+    async function loadTodos() {
+      try {
+        const res = await fetch('/api/todos');
+        const data = await readApiResponse(res);
+
+        if (!res.ok) {
+          return;
+        }
+
+        todos = data.todos || [];
+        render(todos);
+      } catch (err) {
+        // 忽略网络错误
+      }
+    }
+
+    // ============================
+    // 11. 与后端交互：新增任务
+    // ============================
+    async function createTodo(text) {
+      try {
+        const res = await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            date: getTodayString()
+          })
+        });
+
+        const data = await readApiResponse(res);
+
+        if (!res.ok) {
+          return null;
+        }
+
+        return data.todo;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    // ============================
+    // 12. 与后端交互：更新任务完成状态
+    // ============================
+    async function updateTodoDone(id, done) {
+      try {
+        const res = await fetch(`/api/todos/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ done })
+        });
+
+        if (!res.ok) {
+          return false;
+        }
+
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    // ============================
+    // 13. 与后端交互：删除任务
+    // ============================
+    async function deleteTodo(id) {
+      try {
+        const res = await fetch(`/api/todos/${id}`, {
+          method: 'DELETE' });
+
+        if (!res.ok) {
+          return false;
+        }
+
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    // ============================
+    // 14. 渲染函数：把数据画到页面上
+    // ============================
+    function render(listToShow) {
+      // 清空旧内容
+      list.innerHTML = '';
+
+      // 遍历要显示的任务
+      listToShow.forEach((todo) => {
+        // 创建 <li>
+        const li = document.createElement('li');
+        li.className = 'todo-item';
+        li.dataset.id = String(todo.id);
+
+        // 任务文本
+        const textSpan = document.createElement('span');
+        textSpan.className = 'todo-text' + (todo.done ? ' completed' : '');
+        textSpan.textContent = todo.text;
+
+        // 日期显示
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'todo-date';
+        dateSpan.textContent = todo.date;
+
+        // 按钮区域
+        const actions = document.createElement('div');
+        actions.className = 'todo-actions';
+
+        // 完成按钮（根据当前状态显示不同文字）
+        const doneBtn = document.createElement('button');
+        doneBtn.textContent = todo.done ? '取消完成' : '完成';
+        doneBtn.dataset.action = 'toggle';
+
+        // 删除按钮
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '删除';
+        delBtn.dataset.action = 'delete';
+
+        // 组装结构
+        actions.appendChild(doneBtn);
+        actions.appendChild(delBtn);
+
+        li.appendChild(textSpan);
+        li.appendChild(dateSpan);
+        li.appendChild(actions);
+
+        list.appendChild(li);
+      });
+    }
+
+    // ============================
+    // 15. 添加任务（调用后端）
+    // ============================
+    async function addTodo() {
+      if (!currentUser) return; // 未登录不允许添加
+
+      const text = input.value.trim();
+      if (!text) return; // 空内容不添加
+
+      const newTodo = await createTodo(text);
+      if (!newTodo) return;
+
+      todos.unshift(newTodo); // 新任务放在最上面
+      input.value = '';
+      input.focus();
+
+      // 默认显示全部任务
+      render(todos);
+    }
+
+    // ============================
+    // 16. 按日期查找
+    // ============================
+    function filterByDate() {
+      if (!currentUser) return; // 未登录不允许操作
+
+      const dateValue = filterDate.value;
+
+      // 如果没选择日期，就显示全部
+      if (!dateValue) {
+        render(todos);
+        return;
+      }
+
+      const filtered = todos.filter((t) => t.date === dateValue);
+      render(filtered);
+    }
+
+    // ============================
+    // 17. 清除筛选
+    // ============================
+    function clearFilter() {
+      if (!currentUser) return; // 未登录不允许操作
+
+      filterDate.value = '';
+      render(todos);
+    }
+
+    // ============================
+    // 18. 事件绑定
+    // ============================
+    // 注册 / 登录 / 退出
+    registerBtn.addEventListener('click', registerUser);
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loginUser();
+    });
+    logoutBtn.addEventListener('click', logoutUser);
+
+    // 添加任务
+    addBtn.addEventListener('click', addTodo);
+
+    // 回车添加任务
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        addTodo();
+      }
+    });
+
+    // 点击查找
+    filterBtn.addEventListener('click', filterByDate);
+
+    // 点击清除
+    clearBtn.addEventListener('click', clearFilter);
+
+    // 列表按钮（完成 / 删除）使用事件委托
+    list.addEventListener('click', async (e) => {
+      if (!currentUser) return; // 未登录不允许操作
+
+      const action = e.target.dataset.action;
+      if (!action) return;
+
+      const li = e.target.closest('li');
+      if (!li) return;
+
+      const id = Number(li.dataset.id);
+
+      if (action === 'toggle') {
+        const target = todos.find((t) => t.id === id);
+        if (!target) return;
+
+        const ok = await updateTodoDone(id, !target.done);
+        if (!ok) return;
+
+        target.done = !target.done;
+      }
+
+      if (action === 'delete') {
+        const ok = await deleteTodo(id);
+        if (!ok) return;
+
+        todos = todos.filter((t) => t.id !== id);
+      }
+
+      // 更新当前视图（如果有日期筛选，继续按筛选显示）
+      filterByDate();
+    });
+
+    // ============================
+    // 19. 页面初始化
+    // ============================
+    render(todos);   // 先渲染空列表
+    checkLogin();    // 检查是否已登录
+  </script>
 </body>
 </html>
